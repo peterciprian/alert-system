@@ -70,7 +70,7 @@ export default function Home() {
             <option value="slack">Slack</option>
           </select>
 
-          <div>
+          <div className="checkbox-group">
             <label><input type="checkbox" checked={categories.includes('breaking-news')} onChange={() => toggleCategory('breaking-news')} /> Breaking news</label>
             <label style={{ marginLeft: '12px' }}><input type="checkbox" checked={categories.includes('market-movement')} onChange={() => toggleCategory('market-movement')} /> Market movement</label>
             <label style={{ marginLeft: '12px' }}><input type="checkbox" checked={categories.includes('natural-disaster')} onChange={() => toggleCategory('natural-disaster')} /> Natural disaster</label>

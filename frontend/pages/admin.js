@@ -189,9 +189,9 @@ export default function Admin() {
               <option value="natural-disaster">Natural disaster</option>
             </select>
           </label>
-          <div>
+          <div className="actions">
             <button type="submit">Trigger demo event</button>
-            <button type="button" className="secondary" onClick={handleLogout} style={{ marginLeft: '8px' }}>Log out</button>
+            <button type="button" className="secondary" onClick={handleLogout}>Log out</button>
           </div>
         </form>
         {status ? <p className="message">{status}</p> : null}
