@@ -50,3 +50,20 @@ The implementation was verified locally by:
 ## Notes
 
 The implementation is intentionally small and focused so the core design decisions remain visible rather than hidden behind a large framework stack.
+
+# Documentation
+
+## docs
+
+In the `docs` folder there are thematical `.md` files summarizing the requirements, rules, principles, decisions and hard statements that are set along the planning of the project. These are mainly for the AI assistant to consider along the code generation.
+
+## prompts
+
+In the `prompts` folder there are the summaries of the topics discussed with the AI assistant, and there is a history that covers most of the conversation.
+
+# My insights
+
+I really enjoyed this take-home task, I learned a lot by that, and truly questioned my methods of coding with AI assiatance.
+Unfortunately I got myself off guard without any AI assistant I used before, since my Copilot account got cancelled a couple days ago and my Claude account hasn't renewed yet so I tried Windsurf, that I never used before. I'm sure my implementation is not flawless, but the documentation I compiled while planing and implementing my solution is exstensive and hopefully descriptive.
+I really hope we can move forward, but if that were not the case, thanks for the opportunity!
+
