@@ -2,6 +2,7 @@ const http = require('http');
 const { URL } = require('url');
 
 const PORT = process.env.PORT || 3001;
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'demo-admin-token';
 const supportedChannels = ['email', 'slack'];
 const supportedCategories = ['breaking-news', 'market-movement', 'natural-disaster'];
 
@@ -17,7 +18,7 @@ function sendJson(res, statusCode, payload) {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type'
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Admin-Token'
   });
   res.end(JSON.stringify(payload));
 }
@@ -56,6 +57,31 @@ function readJsonBody(req) {
       reject(new Error('Failed to read request body'));
     });
   });
+}
+
+function getAdminToken(req) {
+  const authHeader = req.headers.authorization || '';
+  const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+  const headerToken = req.headers['x-admin-token'];
+
+  if (typeof headerToken === 'string' && headerToken.trim() !== '') {
+    return headerToken;
+  }
+
+  return bearerToken;
+}
+
+function isAdminAuthenticated(req) {
+  return getAdminToken(req) === ADMIN_TOKEN;
+}
+
+function requireAdminAuth(req, res) {
+  if (!isAdminAuthenticated(req)) {
+    sendError(res, 401, 'UNAUTHORIZED', 'Admin access required.');
+    return false;
+  }
+
+  return true;
 }
 
 function isValidEmail(value) {
@@ -197,13 +223,39 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (req.method === 'GET' && requestUrl.pathname === '/subscriptions') {
+    if (!requireAdminAuth(req, res)) {
+      return;
+    }
+
     sendJson(res, 200, {
       subscriptions: subscriptions.map(serializeSubscription)
     });
     return;
   }
 
+  if (req.method === 'POST' && requestUrl.pathname === '/admin/login') {
+    try {
+      const payload = await readJsonBody(req);
+      const submittedToken = typeof payload.token === 'string' ? payload.token : '';
+
+      if (submittedToken === ADMIN_TOKEN) {
+        sendJson(res, 200, { ok: true });
+        return;
+      }
+
+      sendError(res, 401, 'UNAUTHORIZED', 'Invalid admin token.');
+      return;
+    } catch (error) {
+      sendError(res, 400, 'INVALID_REQUEST', error.message || 'Invalid request body');
+      return;
+    }
+  }
+
   if (req.method === 'POST' && requestUrl.pathname === '/admin/demo-event') {
+    if (!requireAdminAuth(req, res)) {
+      return;
+    }
+
     try {
       const payload = await readJsonBody(req);
       const validation = validateDemoEventPayload(payload);
@@ -249,6 +301,10 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (req.method === 'GET' && requestUrl.pathname === '/admin/notifications') {
+    if (!requireAdminAuth(req, res)) {
+      return;
+    }
+
     sendJson(res, 200, {
       notifications: notifications.map(serializeNotification)
     });

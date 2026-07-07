@@ -12,6 +12,7 @@ The following assumptions define the working baseline for the MVP alerting syste
 - The scope should remain intentionally small and maintainable, with a clear path for future growth.
 - The MVP should start with a lightweight admin access mechanism that is easy to replace or extend into a proper authentication and authorization system later.
 - The admin UI can remain simple and internal for the initial demo, but the access layer should be structured in a way that can evolve into a proper auth solution without a major rewrite.
+- The initial implementation uses a lightweight shared-secret admin token that can later be replaced by a more robust authentication mechanism.
 
 ## Design assumptions
 - The architecture should favor clean boundaries, simple domain concepts, and easy future extension.

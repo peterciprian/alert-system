@@ -72,6 +72,11 @@
 
 ## 2026-07-07
 
+- Prompt: "For the admin site build up a lightweight authentication. Implement it bot backend and frontend side. Ask if a decision has to be done."
+- Summary: I implemented a lightweight shared-secret admin authentication flow on both the backend and frontend so the admin pages are protected while staying simple and easy to replace later.
+
+## 2026-07-07
+
 - Prompt: "For every prompt considere the docs/00-rules.md as orders."
 - Summary: I acknowledged the rules document as a binding constraint for future prompts and will follow it as a working set of instructions.
 
