@@ -16,6 +16,9 @@ export default function Admin() {
   const [subscriptions, setSubscriptions] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [loginValue, setLoginValue] = useState('');
+  const [eventCategory, setEventCategory] = useState('breaking-news');
+  const [eventTitle, setEventTitle] = useState('Demo event');
+  const [eventMessage, setEventMessage] = useState('A sample alert was triggered from the admin console.');
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
 
@@ -81,9 +84,18 @@ export default function Admin() {
     setError('');
   };
 
-  const triggerDemoEvent = async () => {
+  const triggerDemoEvent = async (event) => {
+    if (event) {
+      event.preventDefault();
+    }
+
     if (!token) {
       setError('You need to log in first.');
+      return;
+    }
+
+    if (!eventTitle.trim() || !eventMessage.trim()) {
+      setError('Please provide both a title and a message.');
       return;
     }
 
@@ -95,9 +107,9 @@ export default function Admin() {
         method: 'POST',
         headers: buildHeaders(token),
         body: JSON.stringify({
-          category: 'breaking-news',
-          title: 'Demo event',
-          message: 'A sample breaking news alert was triggered.'
+          category: eventCategory,
+          title: eventTitle.trim(),
+          message: eventMessage.trim()
         })
       });
 
@@ -150,8 +162,38 @@ export default function Admin() {
       <section className="card">
         <h1>Admin</h1>
         <p>Trigger demo events and review current subscriptions and notification activity.</p>
-        <button onClick={triggerDemoEvent}>Trigger demo event</button>
-        <button className="secondary" onClick={handleLogout} style={{ marginLeft: '8px' }}>Log out</button>
+        <form onSubmit={triggerDemoEvent}>
+          <label>
+            <span>Title</span>
+            <input
+              type="text"
+              value={eventTitle}
+              onChange={(event) => setEventTitle(event.target.value)}
+              required
+            />
+          </label>
+          <label>
+            <span>Message</span>
+            <textarea
+              value={eventMessage}
+              onChange={(event) => setEventMessage(event.target.value)}
+              rows={4}
+              required
+            />
+          </label>
+          <label>
+            <span>Category</span>
+            <select value={eventCategory} onChange={(event) => setEventCategory(event.target.value)}>
+              <option value="breaking-news">Breaking news</option>
+              <option value="market-movement">Market movement</option>
+              <option value="natural-disaster">Natural disaster</option>
+            </select>
+          </label>
+          <div>
+            <button type="submit">Trigger demo event</button>
+            <button type="button" className="secondary" onClick={handleLogout} style={{ marginLeft: '8px' }}>Log out</button>
+          </div>
+        </form>
         {status ? <p className="message">{status}</p> : null}
         {error ? <p className="message error">{error}</p> : null}
       </section>

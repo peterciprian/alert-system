@@ -5,5 +5,8 @@
   "description": "Simple MVP backend for the alerting system",
   "scripts": {
     "start": "node server.js"
+  },
+  "dependencies": {
+    "nodemailer": "^7.0.1"
   }
 }

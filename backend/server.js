@@ -1,5 +1,6 @@
 const http = require('http');
 const { URL } = require('url');
+const nodemailer = require('nodemailer');
 
 const PORT = process.env.PORT || 3001;
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'demo-admin-token';
@@ -155,20 +156,97 @@ function serializeNotification(notification) {
   };
 }
 
-function dispatchNotification(event, subscription) {
-  const deliveryResult = {
-    status: 'sent',
-    errorMessage: null
-  };
+function getEmailTransporter() {
+  const host = process.env.SMTP_HOST;
+  const port = Number(process.env.SMTP_PORT || 587);
+  const secure = process.env.SMTP_SECURE === 'true' || port === 465;
+
+  if (!host || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    throw new Error('SMTP configuration is incomplete. Set SMTP_HOST, SMTP_USER, SMTP_PASS, and optionally SMTP_PORT/SMTP_SECURE.');
+  }
+
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS
+    }
+  });
+}
+
+async function dispatchNotification(event, subscription) {
+  if (subscription.channel === 'email') {
+    try {
+      const transporter = getEmailTransporter();
+      await transporter.sendMail({
+        from: process.env.SMTP_FROM || process.env.SMTP_USER,
+        to: subscription.email,
+        subject: event.title,
+        text: `${event.message}\n\nCategory: ${event.category}`
+      });
+
+      return {
+        status: 'sent',
+        errorMessage: null
+      };
+    } catch (error) {
+      return {
+        status: 'failed',
+        errorMessage: error.message
+      };
+    }
+  }
+
+  if (subscription.channel === 'slack') {
+    const webhookUrl = process.env.SLACK_WEBHOOK_URL;
+
+    if (!webhookUrl) {
+      return {
+        status: 'failed',
+        errorMessage: 'SLACK_WEBHOOK_URL is not configured.'
+      };
+    }
+
+    try {
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: `*${event.title}*\n${event.message}\nCategory: ${event.category}`
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Slack webhook responded with ${response.status}`);
+      }
+
+      return {
+        status: 'sent',
+        errorMessage: null
+      };
+    } catch (error) {
+      return {
+        status: 'failed',
+        errorMessage: error.message
+      };
+    }
+  }
 
   try {
     console.log(`[notification] ${subscription.channel} -> ${subscription.email} :: ${event.title}`);
   } catch (error) {
-    deliveryResult.status = 'failed';
-    deliveryResult.errorMessage = error.message;
+    return {
+      status: 'failed',
+      errorMessage: error.message
+    };
   }
 
-  return deliveryResult;
+  return {
+    status: 'sent',
+    errorMessage: null
+  };
 }
 
 const server = http.createServer(async (req, res) => {
@@ -275,8 +353,15 @@ const server = http.createServer(async (req, res) => {
 
       const matchedSubscriptions = subscriptions.filter((subscription) => subscription.categories.includes(event.category));
 
-      matchedSubscriptions.forEach((subscription) => {
-        const deliveryResult = dispatchNotification(event, subscription);
+      const deliveryResults = await Promise.all(matchedSubscriptions.map(async (subscription) => {
+        const deliveryResult = await dispatchNotification(event, subscription);
+        return {
+          subscription,
+          deliveryResult
+        };
+      }));
+
+      deliveryResults.forEach(({ subscription, deliveryResult }) => {
         notifications.push({
           id: `notif_${notificationSeq++}`,
           eventId: event.id,
